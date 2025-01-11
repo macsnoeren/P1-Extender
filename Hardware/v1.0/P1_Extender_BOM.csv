@@ -1,0 +1,8 @@
+"Reference","Value","Datasheet","Footprint","Qty","DNP"
+"J1","RJ12","~","Connector_RJ:RJ12_Amphenol_54601-x06_Horizontal","1",""
+"JP1","Reset","~","Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical","1",""
+"R1","165-200 (180)","~","Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal","1",""
+"R2","100","~","Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal","1",""
+"R3","220-330 (330)","~","Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal","1",""
+"U1,U3","6N137","https://docs.broadcom.com/docs/AV02-0940EN","Package_DIP:DIP-8_W7.62mm","2",""
+"U2","WeMos_D1_mini","https://wiki.wemos.cc/products:d1:d1_mini#documentation","Module:WEMOS_D1_mini_light","1",""
