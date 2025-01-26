@@ -45,9 +45,8 @@ void setup() {
   Serial.begin(115200); // open the port at 19200 baud
   Serial.println("\nP1 Extender setup...");
 
-  // Configure the data request pin as input.
-  pinMode(DATA_REQUEST_PIN, INPUT);
-  digitalWrite(DATA_REQUEST_PIN, HIGH); // Enable internal pull-up resistor
+  // Configure the data request pin as input and enable the internal pull-up resistor.
+  pinMode(DATA_REQUEST_PIN, INPUT_PULLUP);
 
   pinMode(D4, OUTPUT); // Problem, hardware pulls it low, so boot fails is pulled low!
 
@@ -110,10 +109,15 @@ void setup() {
   delay(2000);
 }
 
+bool isDataRequest () {
+  return digitalRead(DATA_REQUEST_PIN) == LOW; // If enabled, the pin will be low
+}
+
 void loop() {
-  Serial.println("Send serial");
-  Serial1.print(R"(
-  /Ene5\T211 ESMR 5.0
+  if ( isDataRequest() ) {
+    Serial.println("Send serial");
+    Serial1.print(R"(
+/Ene5\T211 ESMR 5.0
 
 1-3:0.2.8(50)
 0-0:1.0.0(250126164506W)
@@ -152,5 +156,8 @@ void loop() {
 0-1:24.2.1(250126164500W)(012345.678*m3)
 !51D3
 )");
+  } else {
+    Serial.println("Data request not enabled!");
+  }
   delay(5000);
 }
