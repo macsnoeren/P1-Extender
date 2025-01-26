@@ -1,5 +1,5 @@
 ![badge-development-in-progress](https://img.shields.io/badge/development-in_progress-blue)
-![badge-version-1-0-test](https://img.shields.io/badge/version-0.1_(test)-yellow)
+![badge-version-1-0-test](https://img.shields.io/badge/version-1.1_(test)-yellow)
 
 # P1-Extender
 
