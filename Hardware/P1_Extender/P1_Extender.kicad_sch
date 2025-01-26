@@ -6,10 +6,11 @@
 	(paper "A4")
 	(title_block
 		(title "Smartmeter P1 Extender")
-		(date "2025-01-10")
-		(rev "1.0")
+		(date "2025-01-26")
+		(rev "1.1")
 		(company "JMNL Innovation")
 		(comment 1 "Maurice Snoeren")
+		(comment 2 "Added factory reset and fixed issue with D5 driving low at startup (GitHub issue #1).")
 	)
 	(lib_symbols
 		(symbol "Connector:RJ12"
@@ -1712,12 +1713,6 @@
 		(uuid "469a819a-2a0f-4c97-87fb-ad17a818e050")
 	)
 	(junction
-		(at 130.81 73.66)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "77183102-31d3-4253-b12a-eeb7703351c9")
-	)
-	(junction
 		(at 158.75 82.55)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -1791,16 +1786,6 @@
 	)
 	(wire
 		(pts
-			(xy 119.38 73.66) (xy 130.81 73.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0aba7c1a-673e-4f3e-99c3-288722ae21e5")
-	)
-	(wire
-		(pts
 			(xy 121.92 80.01) (xy 130.81 80.01)
 		)
 		(stroke
@@ -1808,6 +1793,16 @@
 			(type default)
 		)
 		(uuid "0bd40eb5-6a02-4e50-84df-e4887c07abdf")
+	)
+	(wire
+		(pts
+			(xy 100.33 102.87) (xy 104.14 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0e165600-0965-4cca-953e-3733871d7474")
 	)
 	(wire
 		(pts
@@ -1961,13 +1956,23 @@
 	)
 	(wire
 		(pts
-			(xy 123.19 66.04) (xy 119.38 66.04)
+			(xy 114.3 102.87) (xy 130.81 102.87)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "7c015a5f-21ed-4ef4-919a-9d510effb0c8")
+		(uuid "6158f845-78e1-4ae3-ba50-8d2533015f9b")
+	)
+	(wire
+		(pts
+			(xy 93.98 66.04) (xy 123.19 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "75d6c25c-c50c-463a-a3c5-2a2e4445f53f")
 	)
 	(wire
 		(pts
@@ -2028,6 +2033,16 @@
 			(type default)
 		)
 		(uuid "8f766e94-0087-45d9-9afe-9b0642032480")
+	)
+	(polyline
+		(pts
+			(xy 105.41 46.99) (xy 105.41 62.23)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "90a67ef1-79da-4ffe-b16e-baaa94f7b064")
 	)
 	(wire
 		(pts
@@ -2141,6 +2156,16 @@
 	)
 	(wire
 		(pts
+			(xy 93.98 78.74) (xy 100.33 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d3c532b6-bb68-4d82-853c-a72f950418f9")
+	)
+	(wire
+		(pts
 			(xy 161.29 69.85) (xy 161.29 49.53)
 		)
 		(stroke
@@ -2148,16 +2173,6 @@
 			(type default)
 		)
 		(uuid "d5b265db-8d5e-42d9-85e9-7c79a7f266be")
-	)
-	(wire
-		(pts
-			(xy 119.38 66.04) (xy 119.38 73.66)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "db1375a3-cc71-4946-b54d-343ddc2e2c68")
 	)
 	(wire
 		(pts
@@ -2178,6 +2193,26 @@
 			(type default)
 		)
 		(uuid "f1811a5a-7a57-432b-a761-46cc2aabf4b9")
+	)
+	(wire
+		(pts
+			(xy 100.33 78.74) (xy 100.33 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f3c5bbaa-9c91-4a1e-a1b2-8571bddd828a")
+	)
+	(polyline
+		(pts
+			(xy 105.41 62.23) (xy 105.41 63.5)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "f50d85d1-01d9-48f2-8ab5-685721789472")
 	)
 	(wire
 		(pts
@@ -2229,6 +2264,18 @@
 		)
 		(uuid "f760c99d-8f60-4be0-9ffd-38a0febda4ee")
 	)
+	(rectangle
+		(start 101.6 39.37)
+		(end 133.35 46.99)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(fill
+			(type none)
+		)
+		(uuid dd17e568-d78a-4514-8128-d2dc110cb3e6)
+	)
 	(text "TX2"
 		(exclude_from_sim no)
 		(at 99.822 72.39 0)
@@ -2238,6 +2285,17 @@
 			)
 		)
 		(uuid "1addc33b-0b60-44f3-bfa5-5513a027acba")
+	)
+	(text "Serial send enable\nRequired to not pull D4 low\nat start-up (GitHub issue #1)"
+		(exclude_from_sim no)
+		(at 103.124 43.688 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "46a3d526-3726-46b5-a177-5ee07f87cda8")
 	)
 	(text "Data request"
 		(exclude_from_sim no)
@@ -2249,25 +2307,27 @@
 		)
 		(uuid "6ee4abfe-4b2f-426e-b6f6-94c73733db24")
 	)
-	(text "https://www.studiopieters.nl/track/"
+	(text "Serial send enable"
 		(exclude_from_sim no)
-		(at 68.58 38.862 0)
+		(at 104.394 64.77 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
+			(justify left)
 		)
-		(uuid "8fec0886-cd1d-493e-a113-6d346b6dfc63")
+		(uuid "9fa56534-b3e6-4fe7-aefb-6d5d04ac11f9")
 	)
-	(text "https://www.robmiles.com/journal/2021/1/29/using-the-second-serial-port-on-the-esp8266"
+	(text "D5/D6 require\ninternal pull-up"
 		(exclude_from_sim no)
-		(at 98.806 36.322 0)
+		(at 103.632 78.232 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
+			(justify left)
 		)
-		(uuid "b2b690cd-dcfd-44dd-8012-de9354b0b1a2")
+		(uuid "bce55262-9626-4f56-9c1b-d9098d82ece2")
 	)
 	(symbol
 		(lib_id "Isolator:6N137")
@@ -2365,7 +2425,6 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(fields_autoplaced yes)
 		(uuid "3184675f-a9f0-4a67-ba94-b68e9544baa7")
 		(property "Reference" "U2"
 			(at 86.0141 93.98 0)
@@ -2377,7 +2436,7 @@
 			)
 		)
 		(property "Value" "WeMos_D1_mini"
-			(at 86.0141 96.52 0)
+			(at 66.04 93.98 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -2742,6 +2801,74 @@
 			(project ""
 				(path "/62ade568-5571-4643-8346-9fdf82f878c8"
 					(reference "J1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Jumper:Jumper_2_Open")
+		(at 109.22 102.87 0)
+		(unit 1)
+		(exclude_from_sim yes)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "7c6a792d-1b61-4358-be51-2f148c5693ac")
+		(property "Reference" "JP2"
+			(at 109.22 96.52 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "Factory Reset"
+			(at 109.22 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
+			(at 109.22 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 109.22 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Jumper, 2-pole, open"
+			(at 109.22 102.87 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "51158491-1426-4d48-b20d-11a5fe5263ae")
+		)
+		(pin "2"
+			(uuid "414359ae-9eac-47ae-961d-4e7376b74d4a")
+		)
+		(instances
+			(project "P1_Extender"
+				(path "/62ade568-5571-4643-8346-9fdf82f878c8"
+					(reference "JP2")
 					(unit 1)
 				)
 			)

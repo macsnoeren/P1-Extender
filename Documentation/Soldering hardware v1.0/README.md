@@ -1,6 +1,8 @@
-# Soldering the hardware version 1.0
+# Soldering the hardware version 1.0 and 1.1
 
 The image below shows the components that are used to create the P1 Extender. Not many components. Using these components it is possible to simulate a smartmeter.
+
+Note: For version 1.1 hardware no components have been added. So the process will be exactly the same.
 
 ![P1 Extender Hardware](image-1.png)
 

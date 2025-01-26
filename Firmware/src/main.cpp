@@ -1,3 +1,9 @@
+/*
+  - How to get the Wemos installed in the Ardiuno IDE: https://siytek.com/wemos-d1-mini-arduino-wifi/
+  - Install library WiFiManager by tablatronics: https://github.com/tzapu/WiFiManager
+  - Install library JsonArduino by Banoit Blanchon: https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+  - Install library knolleary/PubSubClient by Nick O'Leary: https://github.com/knolleary/pubsubclient
+*/
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
@@ -5,6 +11,8 @@
 #include <WiFiClient.h>
 #include <WiFiManager.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
+#include <LittleFS.h>
 
 #define DATA_REQUEST_PIN D5
 #define P1_TELEGRAM_SIZE 2048
@@ -16,6 +24,13 @@
 #define MQTT_REMOTE_HOST_LENGTH 128
 #define MQTT_REMOTE_PORT_LENGTH 10
 #define P1_BAUDRATE_LENGTH 10
+
+#define MQTT_USERNAME "smartmeter"
+#define MQTT_PASSWORD "se_smartmeter"
+#define MQTT_REMOTE_HOST "sendlab.nl"
+#define MQTT_REMOTE_PORT "11883"
+#define MQTT_TOPIC "smartmeter/raw"
+#define MQTT_MSGBUF_SIZE 2048
 
 // Create struct for application config.
 typedef struct {
@@ -30,14 +45,83 @@ typedef struct {
 
 // Global variables
 WiFiManager wifiManager;
+bool shouldSaveConfig = false;
 WiFiClient wifiClient;
 PubSubClient mqttClient("", 0, wifiClient); // Only with some dummy values seems to work ... instead of mqttClient();
 char p1[P1_MAX_DATAGRAM_SIZE]; // Complete P1 telegram
 APP_CONFIG_STRUCT app_config;
 char mqtt_topic[128];
 
+bool deleteAppConfig() {
+  if( LittleFS.begin() ) {
+    if( LittleFS.exists("/config.json") ) {
+      if( LittleFS.remove("/config.json") ) {
+        return true;
+      }
+    }
+  } 
+  return false;
+}
+
+void factoryDefault () {
+  wifiManager.resetSettings();
+  deleteAppConfig();
+  delay(2000);
+  ESP.reset();
+}
+
+bool readAppConfig(APP_CONFIG_STRUCT *app_config) {
+  if( LittleFS.begin() ) {
+    if( LittleFS.exists("/config.json") ) {
+       File configFile = LittleFS.open("/config.json","r");
+       if( configFile ) {
+
+          size_t size = configFile.size();
+          if (size > 1024) {
+            Serial.println("Config file size is too large");
+          }
+
+          std::unique_ptr<char[]> buf(new char[size]);
+          configFile.readBytes(buf.get(), size);
+        
+          JsonDocument doc;
+          DeserializationError error = deserializeJson(doc, buf.get());
+          
+          if( error == DeserializationError::Ok ) {
+             strcpy(app_config->mqtt_username, doc["MQTT_USERNAME"]);
+             strcpy(app_config->mqtt_password, doc["MQTT_PASSWORD"]);
+             strcpy(app_config->mqtt_remote_host, doc["MQTT_HOST"]);
+             strcpy(app_config->mqtt_remote_port, doc["MQTT_PORT"]);
+             strcpy(app_config->p1_baudrate, doc["P1_BAUDRATE"]);
+             return true;
+          }
+       }
+    }
+  }  
+  return false;
+}
+
+bool writeAppConfig(APP_CONFIG_STRUCT *app_config) {
+  deleteAppConfig(); // Delete config file if exists
+
+  JsonDocument doc;
+  doc["MQTT_USERNAME"] = app_config->mqtt_username;
+  doc["MQTT_PASSWORD"] = app_config->mqtt_password;
+  doc["MQTT_HOST"] = app_config->mqtt_remote_host;
+  doc["MQTT_PORT"] = app_config->mqtt_remote_port;
+  doc["P1_BAUDRATE"]= app_config->p1_baudrate;
+  
+  File configFile = LittleFS.open("/config.json","w+");
+  if( configFile ) {
+     serializeJson(doc, configFile);
+     configFile.close();
+     return true;
+  }    
+  return false;
+}
+
 void saveConfigCallback () {
-  Serial.println("(TODO): Should save config!");
+  shouldSaveConfig = true;
 }
 
 void setup() {
@@ -49,6 +133,16 @@ void setup() {
   pinMode(DATA_REQUEST_PIN, INPUT_PULLUP);
 
   pinMode(D4, OUTPUT); // Problem, hardware pulls it low, so boot fails is pulled low!
+
+  // Read config file or generate default
+  if( !readAppConfig(&app_config) ) {
+    strcpy(app_config.mqtt_username, MQTT_USERNAME);
+    strcpy(app_config.mqtt_password, MQTT_PASSWORD);
+    strcpy(app_config.mqtt_remote_host, MQTT_REMOTE_HOST);
+    strcpy(app_config.mqtt_remote_port, MQTT_REMOTE_PORT);
+    strcpy(app_config.p1_baudrate, "115200");
+    writeAppConfig(&app_config);
+  }
 
   wifiManager.setMinimumSignalQuality(20);
   wifiManager.setTimeout(300);
@@ -81,6 +175,15 @@ void setup() {
     ESP.reset();
   }
 
+  if ( shouldSaveConfig ) {
+    strcpy(app_config.mqtt_username, custom_mqtt_username.getValue());
+    strcpy(app_config.mqtt_password, custom_mqtt_password.getValue());
+    strcpy(app_config.mqtt_remote_host, custom_mqtt_remote_host.getValue());
+    strcpy(app_config.mqtt_remote_port, custom_mqtt_remote_port.getValue());
+    strcpy(app_config.p1_baudrate, custom_p1_baudrate.getValue());
+    writeAppConfig(&app_config);
+  }
+
   Serial.printf("\n");
   Serial.printf("************ P1 Extender ********************\n");
   Serial.printf("ESP8266 info\n");
@@ -103,7 +206,9 @@ void setup() {
 
   // Configure the second (half) serial port
   // https://www.robmiles.com/journal/2021/1/29/using-the-second-serial-port-on-the-esp8266
-  Serial1.begin(115200);//atol(app_config.p1_baudrate), SERIAL_8N1); // simulating the smart meter on port D4
+  Serial1.begin(atol(app_config.p1_baudrate), SERIAL_8N1); // simulating the smart meter on port D4
+
+  //factoryDefault();
 
   // Allow bootloader to connect: do not remove!
   delay(2000);
