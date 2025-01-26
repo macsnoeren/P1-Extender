@@ -15,6 +15,9 @@
 #include <LittleFS.h>
 
 #define DATA_REQUEST_PIN D5
+#define SERIAL_SEND_ENABLE_PIN D1
+#define FACTORY_RESET_PIN D6
+
 #define P1_TELEGRAM_SIZE 2048
 #define P1_MAX_DATAGRAM_SIZE 2048
 #define MQTT_USERNAME_LENGTH 32
@@ -130,9 +133,16 @@ void setup() {
   Serial.println("\nP1 Extender setup...");
 
   // Configure the data request pin as input and enable the internal pull-up resistor.
+  pinMode(D4, OUTPUT); // Serial 1 output
   pinMode(DATA_REQUEST_PIN, INPUT_PULLUP);
+  pinMode(FACTORY_RESET_PIN, INPUT_PULLUP);
+  pinMode(SERIAL_SEND_ENABLE_PIN, OUTPUT);
+  digitalWrite(SERIAL_SEND_ENABLE_PIN, LOW); // Enable the serial send.
 
-  pinMode(D4, OUTPUT); // Problem, hardware pulls it low, so boot fails is pulled low!
+  if ( digitalRead(FACTORY_RESET_PIN) == LOW ) { // If pull low at start-up, start the factory default functionality
+  Serial.println("Go to factory defaults!!");
+    factoryDefault();
+  }
 
   // Read config file or generate default
   if( !readAppConfig(&app_config) ) {
@@ -207,8 +217,6 @@ void setup() {
   // Configure the second (half) serial port
   // https://www.robmiles.com/journal/2021/1/29/using-the-second-serial-port-on-the-esp8266
   Serial1.begin(atol(app_config.p1_baudrate), SERIAL_8N1); // simulating the smart meter on port D4
-
-  //factoryDefault();
 
   // Allow bootloader to connect: do not remove!
   delay(2000);
