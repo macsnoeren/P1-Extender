@@ -226,7 +226,41 @@ bool isDataRequest () {
   return digitalRead(DATA_REQUEST_PIN) == LOW; // If enabled, the pin will be low
 }
 
-void loop() {
+void mqtt_callback (char* topic, byte* payload, unsigned int length) {
+  Serial.println("mqtt_callback: not implemented!");
+}
+
+void mqtt_connect () {
+  char *host = app_config.mqtt_remote_host;
+  int port = atoi(app_config.mqtt_remote_port);
+  
+  mqttClient.setClient(wifiClient);
+  mqttClient.setServer(host, port );
+  mqttClient.setBufferSize(MQTT_MSGBUF_SIZE);
+  if(mqttClient.connect(app_config.mqtt_id, app_config.mqtt_username, app_config.mqtt_password)){
+
+    // Subscribe to mqtt topic
+    mqttClient.subscribe(mqtt_topic);
+
+    // Set callback
+    mqttClient.setCallback(mqtt_callback);
+    Serial.printf("%s: MQTT connected to %s:%d\n", __FUNCTION__, host, port);
+  } else {
+    Serial.printf("%s: MQTT connection ERROR (%s:%d)\n", __FUNCTION__, host, port);
+  }
+}
+
+void loop () {
+  // Handle mqtt
+  if( !mqttClient.connected() ) {
+    mqtt_connect();
+    delay(250);
+
+  } else {
+    mqttClient.loop();
+  }
+
+
   if ( isDataRequest() ) {
     Serial.println("Send serial");
     Serial1.print(R"(
