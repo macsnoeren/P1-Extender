@@ -66,6 +66,25 @@ bool deleteAppConfig() {
   return false;
 }
 
+void create_unique_mqtt_topic_string (char *topic_string) {
+   char tmp[30];
+   strcpy(topic_string,"P1EXT-V01");
+   sprintf(tmp,"-%06X",ESP.getChipId());
+   strcat(topic_string,tmp);
+   sprintf(tmp,"-%06X",ESP.getFlashChipId()); 
+   strcat(topic_string,tmp);
+}
+
+void create_unigue_mqtt_id (char *signature) {
+   char tmp[30];
+   strcpy(signature,"2025-P1-EXT");
+   strcat(signature,"-V01");
+   sprintf(tmp,"-%06X",ESP.getChipId());
+   strcat(signature,tmp);
+   sprintf(tmp,"-%06X",ESP.getFlashChipId()); 
+   strcat(signature,tmp);
+}
+
 void factoryDefault () {
   wifiManager.resetSettings();
   deleteAppConfig();
@@ -143,6 +162,11 @@ void setup() {
   Serial.println("Go to factory defaults!!");
     factoryDefault();
   }
+
+  // Setup unique mqtt id and mqtt topic string
+  create_unique_mqtt_topic_string(app_config.mqtt_topic);
+  create_unigue_mqtt_id(app_config.mqtt_id);
+  sprintf(mqtt_topic, MQTT_TOPIC);
 
   // Read config file or generate default
   if( !readAppConfig(&app_config) ) {
@@ -231,80 +255,42 @@ void mqtt_callback (char* topic, byte* payload, unsigned int length) {
 }
 
 void mqtt_connect () {
-  char *host = app_config.mqtt_remote_host;
-  int port = atoi(app_config.mqtt_remote_port);
-  
-  mqttClient.setClient(wifiClient);
-  mqttClient.setServer(host, port );
-  mqttClient.setBufferSize(MQTT_MSGBUF_SIZE);
-  if(mqttClient.connect(app_config.mqtt_id, app_config.mqtt_username, app_config.mqtt_password)){
+  if ( !mqttClient.connected() ) {
+    char *host = app_config.mqtt_remote_host;
+    int port = atoi(app_config.mqtt_remote_port);
+    
+    mqttClient.setClient(wifiClient);
+    mqttClient.setServer(host, port );
+    mqttClient.setBufferSize(MQTT_MSGBUF_SIZE);
+    if ( mqttClient.connect(app_config.mqtt_id, app_config.mqtt_username, app_config.mqtt_password) ) {
 
-    // Subscribe to mqtt topic
-    mqttClient.subscribe(mqtt_topic);
+      // Subscribe to mqtt topic
+      mqttClient.subscribe(mqtt_topic);
 
-    // Set callback
-    mqttClient.setCallback(mqtt_callback);
-    Serial.printf("%s: MQTT connected to %s:%d\n", __FUNCTION__, host, port);
-  } else {
-    Serial.printf("%s: MQTT connection ERROR (%s:%d)\n", __FUNCTION__, host, port);
+      // Set callback
+      mqttClient.setCallback(mqtt_callback);
+      Serial.printf("%s: MQTT connected to %s:%d\n", __FUNCTION__, host, port);
+
+    } else {
+      Serial.printf("%s: MQTT connection ERROR (%s:%d)\n", __FUNCTION__, host, port);
+    }
   }
 }
 
 void loop () {
-  // Handle mqtt
-  if( !mqttClient.connected() ) {
-    mqtt_connect();
-    delay(250);
+  if( WiFi.status() == WL_CONNECTED) {
+    if( !mqttClient.connected() ) {
+      Serial.printf("State: %d\n", mqttClient.state());
+      mqtt_connect();
+      delay(1000);
 
-  } else {
-    mqttClient.loop();
+    }
   }
 
-
+  mqttClient.loop();
+  
   if ( isDataRequest() ) {
     Serial.println("Send serial");
-    Serial1.print(R"(
-/Ene5\T211 ESMR 5.0
-
-1-3:0.2.8(50)
-0-0:1.0.0(250126164506W)
-0-0:96.1.1(4530303632303030303130363330373232)
-1-0:1.8.1(000123.456*kWh)
-1-0:1.8.2(001234.567*kWh)
-1-0:2.8.1(001234.567*kWh)
-1-0:2.8.2(001234.567*kWh)
-0-0:96.14.0(0001)
-1-0:1.7.0(01.234*kW)
-1-0:2.7.0(00.000*kW)
-0-0:96.7.21(00017)
-0-0:96.7.9(00007)
-1-0:99.97.0(2)(0-0:96.7.19)(230621102410S)(0000004757*s)(221007100958S)(0000024711*s)
-1-0:32.32.0(00002)
-1-0:52.32.0(00002)
-1-0:72.32.0(00004)
-1-0:32.36.0(00000)
-1-0:52.36.0(00000)
-1-0:72.36.0(00000)
-0-0:96.13.0()
-1-0:32.7.0(224.0*V)
-1-0:52.7.0(225.0*V)
-1-0:72.7.0(226.0*V)
-1-0:31.7.0(001*A)
-1-0:51.7.0(002*A)
-1-0:71.7.0(003*A)
-1-0:21.7.0(00.678*kW)
-1-0:41.7.0(00.567*kW)
-1-0:61.7.0(00.456*kW)
-1-0:22.7.0(00.000*kW)
-1-0:42.7.0(00.000*kW)
-1-0:62.7.0(00.000*kW)
-0-1:24.1.0(003)
-0-1:96.1.0(4730303533303033363734313433343137)
-0-1:24.2.1(250126164500W)(012345.678*m3)
-!51D3
-)");
-  } else {
-    Serial.println("Data request not enabled!");
+    //Serial1.print();
   }
-  delay(5000);
 }
