@@ -50,8 +50,12 @@ typedef struct {
 WiFiManager wifiManager;
 bool shouldSaveConfig = false;
 WiFiClient wifiClient;
+WiFiClient tcpServerClient;
 PubSubClient mqttClient("", 0, wifiClient); // Only with some dummy values seems to work ... instead of mqttClient();
 char p1[P1_MAX_DATAGRAM_SIZE]; // Complete P1 telegram
+uint8_t p1State = 0;
+uint16_t p1Pointer = 0;
+uint32_t p1Timer = 0;
 APP_CONFIG_STRUCT app_config;
 char mqtt_topic[128];
 
@@ -244,6 +248,9 @@ void setup() {
 
   // Allow bootloader to connect: do not remove!
   delay(2000);
+
+  // Set p1 timer timeout
+  p1Timer = millis();
 }
 
 bool isDataRequest () {
@@ -277,20 +284,95 @@ void mqtt_connect () {
   }
 }
 
-void loop () {
-  if( WiFi.status() == WL_CONNECTED) {
-    if( !mqttClient.connected() ) {
-      Serial.printf("State: %d\n", mqttClient.state());
-      mqtt_connect();
-      delay(1000);
-
+bool captureP1 () {
+  if ( tcpServerClient.connected() && tcpServerClient.available() ) {
+    while ( tcpServerClient.available() ) {
+      char c = tcpServerClient.read();
+      switch(p1State) {
+        case 0: // state start
+          if ( c == '/' ) {
+            p1[p1Pointer] = c;
+            p1Pointer++;
+            p1State = 1;
+          }
+          break;
+        case 1: // state read message
+          p1[p1Pointer] = c;
+          p1Pointer++;
+          if ( c == '!' ) {
+            p1State = 2;
+          }
+          break;
+        case 2: // End
+          p1[p1Pointer] = c;
+          p1Pointer++;
+          if ( c == '\n' ) {
+            p1[p1Pointer] = '\0';
+            p1Pointer = 0;
+            p1State = 0;
+            return true;
+          }
+          break;
+      }
+      if ( p1Pointer >= P1_MAX_DATAGRAM_SIZE ) {
+        Serial.println("captureP1: Buffer overflow detected.");
+        p1Pointer = 0;
+        p1State = 0;
+        tcpServerClient.flush();
+        return false;
+      }
     }
   }
 
-  mqttClient.loop();
-  
-  if ( isDataRequest() ) {
-    Serial.println("Send serial");
-    //Serial1.print();
+  return false;
+}
+
+void loop () {
+  if( WiFi.status() == WL_CONNECTED) {
+    /*if( !mqttClient.connected() ) {
+      Serial.printf("State: %d\n", mqttClient.state());
+      mqtt_connect();
+      delay(1000);
+    }*/
   }
+
+  // Handel the MQTT
+  //mqttClient.loop();
+  
+  // Connect to the p1 data server
+  if ( !tcpServerClient.connected() ) {
+    delay(1000);
+//  if ( tcpServerClient.connect("192.168.2.80", 3141) ) {
+    if ( tcpServerClient.connect("diy_smartmeter.local", 3141) ) {
+      char message[100];
+      size_t len = tcpServerClient.readBytesUntil('\n', message, 100); // Read the first message 'Smartmeter'
+      message[len] = '\0';
+      Serial.printf("wifiClient: Connected: '%s'\n", message);
+
+    } else {
+      Serial.println("wifiClient: Could not establish the connection.");
+    }
+    p1Timer = millis(); // No timer required here!
+  }
+
+  // Get the p1 message
+  if ( captureP1() ) {
+    //Serial.printf("P1: '%s'\n", p1);
+    if ( isDataRequest() ) {
+      Serial.println("Recieved P1 and forward P1");
+      Serial1.print(p1);
+    } else {
+      Serial.println("Recieved P1");
+    }
+    p1Timer = millis();
+  }
+
+  // Check p1 timeout
+  if ( millis() > p1Timer + 10000 ) {
+    Serial.println("P1: Timeout...");
+    tcpServerClient.flush();
+    tcpServerClient.stop();
+    p1Timer = millis();
+  }
+
 }
